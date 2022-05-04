@@ -530,27 +530,37 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "aboutMe", ()=>aboutMe
 );
+parcelHelpers.export(exports, "collectMessageData", ()=>collectMessageData
+);
 var _viewJs = require("./view.js");
+var _socketJs = require("./socket.js");
+var _backendJs = require("./backend.js");
 var _dateFns = require("date-fns");
 var _jsCookie = require("js-cookie");
 var _jsCookieDefault = parcelHelpers.interopDefault(_jsCookie);
-const Rest_API_Data = {
-    email: {
-        email: 'fanilfan1994@mail.ru'
-    },
-    url: 'https://mighty-cove-31255.herokuapp.com/api',
-    messageAPI: 'messages',
-    senderAPI: 'user/me',
-    user: 'user'
-};
+const messagesShowCount = 20;
+const historyArray = [];
 const aboutMe = {
     name: 'Я',
     email: 'fanilfan@mail.ru'
 };
-const messagesShowCount = 2;
-getAboutMe(Rest_API_Data);
+function collectMessageData(text, sendTime, sender, email) {
+    const messageData = {
+        text: text,
+        sendTime: _dateFns.format(new Date(sendTime), 'HH:mm'),
+        sender: sender,
+        email: email
+    };
+    return messageData;
+}
+function getHistoryArray(array) {
+    array.forEach((element)=>{
+        historyArray.push(element);
+    });
+}
+_backendJs.getAboutMe(_backendJs.Rest_API_Data);
 checkCookie();
-const chatCodeApprove = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhbmlsZmFuMTk5NEBtYWlsLnJ1IiwiaWF0IjoxNjUxNTA1MDUyLCJleHAiOjE2NTE5NTE0NTJ9.zkWiJFql2pfCa2UTlNYSeVawr8o7C9-fq0vrjIRQUHE';
+const chatCodeApprove = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhbmlsZmFuMTk5NEBtYWlsLnJ1IiwiaWF0IjoxNjUxNjg5NzE3LCJleHAiOjE2NTIxMzYxMTd9.BKRCbU-mMEv5LQ6wfGSgXkMmvLG70E8_qbW8DMbnBrs';
 _viewJs.UI_BUTTONS.settings.addEventListener('click', _viewJs.openCloseSettings);
 _viewJs.UI_BUTTONS.settingsClose.addEventListener('click', _viewJs.openCloseSettings);
 _viewJs.UI_BUTTONS.authorizationClose.addEventListener('click', ()=>{
@@ -567,27 +577,27 @@ _viewJs.UI_FORMS.settings.addEventListener('submit', (event)=>{
     event.preventDefault();
 });
 _viewJs.UI_FORMS.settings.addEventListener('submit', ()=>{
-    sendUserName(Rest_API_Data);
+    changeUserName(_backendJs.Rest_API_Data);
 });
 _viewJs.UI_FORMS.newMessage.addEventListener('submit', (event)=>{
     event.preventDefault();
 });
 _viewJs.UI_FORMS.newMessage.addEventListener('submit', ()=>{
-    sendMessageWebSocket();
+    _socketJs.sendMessageWebSocket();
 });
 _viewJs.UI_FORMS.newMessage.addEventListener('submit', _viewJs.clearInput);
+_viewJs.UI_FORMS.authorization.addEventListener('submit', (event)=>{
+    event.preventDefault();
+});
+_viewJs.UI_FORMS.authorization.addEventListener('submit', ()=>{
+    sendAuthorizationData(_backendJs.Rest_API_Data);
+});
+_viewJs.UI_ELEM.chatBlock.addEventListener('scroll', ()=>{
+    addDisplayedMessages(messagesShowCount, historyArray);
+});
 function loadData() {
-    getHistory(Rest_API_Data, messagesShowCount);
-    getAboutMe(Rest_API_Data);
-}
-function collectMessageData(text, sendTime, sender, email) {
-    const messageData = {
-        text: text,
-        sendTime: _dateFns.format(new Date(sendTime), 'HH:mm'),
-        sender: sender,
-        email: email
-    };
-    return messageData;
+    getHistory(_backendJs.Rest_API_Data, messagesShowCount);
+    _backendJs.getAboutMe(_backendJs.Rest_API_Data);
 }
 function setApproveCodeCookie() {
     const approveCode = _viewJs.UI_INPUTS.approveCode.value;
@@ -605,75 +615,34 @@ function checkCookie() {
         loadData();
     } else _viewJs.closeModal(_viewJs.UI_MODALS.dataLoad);
 }
-async function getAboutMe({ url , senderAPI  }) {
-    try {
-        const response = await fetch(`${url}/${senderAPI}`, {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${_jsCookieDefault.default.get('approveCode')}`
-            }
-        });
-        if (response.status === 401) {
-            _viewJs.openModal(_viewJs.UI_MODALS.approve);
-            _viewJs.openModal(_viewJs.UI_MODALS.authorization);
-            _viewJs.closeModal(_viewJs.UI_MODALS.dataLoad);
-            throw new Error('Check that approve code was correct');
-        }
-        const { name , email  } = await response.json();
-        console.log(name, email);
-        aboutMe.name = name;
-        aboutMe.email = email;
-    } catch (error) {
-        alert(`Error while Fetch running API: ${senderAPI}\n Check console log for details`, error.stack);
-        console.log(error.stack);
-    }
-}
 async function getHistory({ url , messageAPI  }, count) {
     try {
         const response = await fetch(`${url}/${messageAPI}`);
         const result = await response.json();
-        const messages = result.messages;
-        getMessageByCount(count);
-        function getMessageByCount(n) {
-            if (n < 1) return;
-            const { text , createdAt , user: { email  }  } = messages[messages.length - n];
-            _viewJs.sendNewMessageUI(collectMessageData(text, createdAt, aboutMe.name, email));
-            getMessageByCount(n - 1);
-        }
+        const messageArray = result.messages;
+        getHistoryArray(messageArray);
+        getMessageByCount(count, messageArray);
         _viewJs.closeModal(_viewJs.UI_MODALS.dataLoad);
     } catch (error) {
         const errorMessage = `Error while Fetch running API: ${url}/${messageAPI}`;
         console.log(errorMessage, error.stack);
     }
 }
-async function sendUserName({ url , user  }) {
+async function changeUserName({ url , user  }) {
     try {
         _viewJs.UI_ELEM.preloader.classList.add('display__preloader');
         const senderName = {
             name: _viewJs.UI_INPUTS.settings.value
         };
-        const userName = await fetch(`${url}/${user}`, {
-            method: 'PATCH',
-            headers: {
-                Authorization: `Bearer ${_jsCookieDefault.default.get('approveCode')}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(senderName)
-        });
+        _backendJs.setSenderName(senderName, url, user);
         aboutMe.name = senderName.name;
-        getAboutMe(Rest_API_Data);
+        _backendJs.getAboutMe(_backendJs.Rest_API_Data);
         _viewJs.UI_ELEM.preloader.classList.remove('display__preloader');
         _viewJs.closeModal(_viewJs.UI_MODALS.settings);
     } catch (error) {
         alert(error.stack);
     }
 }
-_viewJs.UI_FORMS.authorization.addEventListener('submit', (event)=>{
-    event.preventDefault();
-});
-_viewJs.UI_FORMS.authorization.addEventListener('submit', ()=>{
-    sendAuthorizationData(Rest_API_Data);
-});
 async function sendAuthorizationData({ email , url , user  }) {
     try {
         const response = await fetch(`${url}/${user}`, {
@@ -694,51 +663,25 @@ async function sendAuthorizationData({ email , url , user  }) {
         console.log(`Fetch ${user}}`, Error.stack);
     }
 }
-function socketInit() {
-    const socket1 = new WebSocket(`ws://mighty-cove-31255.herokuapp.com/websockets?${_jsCookieDefault.default.get('approveCode')}`);
-    return socket1;
+function getMessageByCount(n, messagesJSON) {
+    if (n < 1) return;
+    getMessageByCount(n - 1, messagesJSON);
+    const arrayElem = messagesJSON[messagesJSON.length - n];
+    const { text , createdAt , user: { email , name  }  } = arrayElem;
+    _viewJs.sendHistoryMessageUI(collectMessageData(text, createdAt, name, email));
 }
-socketInit();
-const socket = socketInit();
-function sendMessageWebSocket() {
-    try {
-        const message = _viewJs.UI_INPUTS.message.value;
-        const sessionStatus = socket.readyState;
-        const sessionClosed = {
-            closing: 2,
-            closed: 3
-        };
-        const sessionWasClosed = sessionStatus === sessionClosed.closed || sessionStatus === sessionClosed.closing;
-        console.log(socket.readyState);
-        socket.send(JSON.stringify({
-            text: message
-        }));
-        if (sessionWasClosed) {
-            console.log('sessionClosed');
-            socketInit();
-        }
-    } catch (error) {
-        console.log(error.stack);
+function addDisplayedMessages(count, array) {
+    const scrollAtTop = _viewJs.UI_ELEM.chatBlock.scrollTop;
+    if (array.length === 0) {
+        _viewJs.loadedAllMessages('Все сообщения были загружены');
+        return;
+    } else if (scrollAtTop === 0) {
+        const messageToShow = array.splice(-count, count);
+        setTimeout(getMessageByCount(count, messageToShow), 1000);
     }
 }
-// socket.addEventListener('open', sendMessageWebSocket);
-socket.onmessage = function(event) {
-    try {
-        const newSocketMessage = JSON.parse(event.data);
-        const { text , createdAt , user: { email  }  } = newSocketMessage;
-        const name = aboutMe.name;
-        const brokenJSON = !text || !createdAt || !name || !email;
-        if (brokenJSON) throw new Error('JSON was broken');
-        else {
-            console.log(collectMessageData(text, createdAt, name, email));
-            _viewJs.sendNewMessageUI(collectMessageData(text, createdAt, name, email));
-        }
-    } catch (error) {
-        console.log(error.stack);
-    }
-};
 
-},{"./view.js":"de63B","date-fns":"9yHCA","js-cookie":"c8bBu","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"de63B":[function(require,module,exports) {
+},{"./view.js":"de63B","./socket.js":"duoz3","./backend.js":"ddznb","date-fns":"9yHCA","js-cookie":"c8bBu","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"de63B":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "UI_ELEM", ()=>UI_ELEM
@@ -753,6 +696,10 @@ parcelHelpers.export(exports, "UI_MODALS", ()=>UI_MODALS
 );
 parcelHelpers.export(exports, "sendNewMessageUI", ()=>sendNewMessageUI
 );
+parcelHelpers.export(exports, "sendHistoryMessageUI", ()=>sendHistoryMessageUI
+);
+parcelHelpers.export(exports, "loadedAllMessages", ()=>loadedAllMessages
+);
 parcelHelpers.export(exports, "openCloseSettings", ()=>openCloseSettings
 );
 parcelHelpers.export(exports, "closeModal", ()=>closeModal
@@ -763,13 +710,13 @@ parcelHelpers.export(exports, "showAuthorithationOk", ()=>showAuthorithationOk
 );
 parcelHelpers.export(exports, "clearInput", ()=>clearInput
 );
-var _dateFns = require("date-fns");
 var _mainJs = require("./main.js");
 const UI_ELEM = {
     messageList: document.querySelector('.message__list'),
     chatTemplate: document.querySelector('.chat_template'),
     chatBlock: document.querySelector('.chatBlock'),
-    preloader: document.querySelector('.preloader')
+    preloader: document.querySelector('.preloader'),
+    messageInfo: document.querySelector('.message__info')
 };
 const UI_INPUTS = {
     message: document.querySelector('.message__input'),
@@ -795,23 +742,34 @@ const UI_MODALS = {
     authorization: document.querySelector('.authorization__modal'),
     dataLoad: document.querySelector('.data__load__modal')
 };
-function sendNewMessageUI({ text , sendTime , sender , email  }) {
-    UI_ELEM.messageList.append(UI_ELEM.chatTemplate.content.cloneNode(true));
-    const newMessageItem = UI_ELEM.messageList.lastElementChild;
+function createMessageUIContent(elem, text, sendTime, sender, email) {
     const NEW_MESSAGE = {
-        text: newMessageItem.querySelector('.template_message__text'),
-        sendTime: newMessageItem.querySelector('.send__time'),
-        sender: newMessageItem.querySelector('.sender')
+        text: elem.querySelector('.template_message__text'),
+        sendTime: elem.querySelector('.send__time'),
+        sender: elem.querySelector('.sender')
     };
     const isSenderI = email === _mainJs.aboutMe.email;
-    if (isSenderI) newMessageItem.classList.add('my__message');
+    if (isSenderI) elem.classList.add('my__message');
     NEW_MESSAGE.text.innerText = text;
     NEW_MESSAGE.sendTime.innerText = sendTime;
     NEW_MESSAGE.sender.innerText = `${sender}: `;
+}
+function sendNewMessageUI({ text , sendTime , sender , email  }) {
+    UI_ELEM.messageList.append(UI_ELEM.chatTemplate.content.cloneNode(true));
+    const newMessageItem = UI_ELEM.messageList.lastElementChild;
+    createMessageUIContent(newMessageItem, text, sendTime, sender, email);
     // Нужно ли действие ниже выносить в отдельную функцию?
     UI_ELEM.messageList.scrollIntoView({
         block: "end"
     });
+}
+function sendHistoryMessageUI({ text , sendTime , sender , email  }) {
+    UI_ELEM.messageList.prepend(UI_ELEM.chatTemplate.content.cloneNode(true));
+    const newMessageItem = UI_ELEM.messageList.firstElementChild;
+    createMessageUIContent(newMessageItem, text, sendTime, sender, email);
+}
+function loadedAllMessages(text) {
+    UI_ELEM.messageInfo.innerText = text;
 }
 function openCloseSettings() {
     UI_MODALS.settings.classList.toggle('displayModal');
@@ -829,7 +787,7 @@ function clearInput() {
     UI_INPUTS.message.value = '';
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","date-fns":"9yHCA","./main.js":"adjPd"}],"gkKU3":[function(require,module,exports) {
+},{"./main.js":"adjPd","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -859,7 +817,734 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}],"9yHCA":[function(require,module,exports) {
+},{}],"duoz3":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "socket", ()=>socket
+);
+parcelHelpers.export(exports, "sendMessageWebSocket", ()=>sendMessageWebSocket
+);
+var _viewJs = require("./view.js");
+var _mainJs = require("./main.js");
+var _backendJs = require("./backend.js");
+var _reconnectingWebsocket = require("reconnecting-websocket");
+var _reconnectingWebsocketDefault = parcelHelpers.interopDefault(_reconnectingWebsocket);
+const socket = new _reconnectingWebsocketDefault.default(_backendJs.Rest_API_Data.webSocket);
+function sendMessageWebSocket() {
+    try {
+        const message = _viewJs.UI_INPUTS.message.value;
+        const sessionStatus = socket.readyState;
+        const sessionClosed = {
+            closing: 2,
+            closed: 3
+        };
+        const sessionWasClosed = sessionStatus === sessionClosed.closed || sessionStatus === sessionClosed.closing;
+        socket.send(JSON.stringify({
+            text: message
+        }));
+        if (sessionWasClosed) console.log('sessionClosed');
+    } catch (error) {
+        console.log(error.stack);
+    }
+}
+socket.onmessage = function(event) {
+    try {
+        const newSocketMessage = JSON.parse(event.data);
+        console.log(newSocketMessage);
+        const { text , createdAt , user: { email , name  }  } = newSocketMessage;
+        const brokenJSON = !text || !createdAt || !name || !email;
+        if (brokenJSON) throw new Error('JSON was broken');
+        else {
+            console.log(_mainJs.collectMessageData(text, createdAt, name, email));
+            _viewJs.sendNewMessageUI(_mainJs.collectMessageData(text, createdAt, name, email));
+        }
+    } catch (error) {
+        console.log(error.stack);
+    }
+};
+
+},{"./view.js":"de63B","./main.js":"adjPd","./backend.js":"ddznb","reconnecting-websocket":"foTU5","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"ddznb":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Rest_API_Data", ()=>Rest_API_Data
+);
+parcelHelpers.export(exports, "getAboutMe", ()=>getAboutMe
+);
+parcelHelpers.export(exports, "setSenderName", ()=>setSenderName
+);
+var _jsCookie = require("js-cookie");
+var _jsCookieDefault = parcelHelpers.interopDefault(_jsCookie);
+var _main = require("./main");
+var _view = require("./view");
+const Rest_API_Data = {
+    email: {
+        email: 'fanilfan1994@mail.ru'
+    },
+    url: 'https://mighty-cove-31255.herokuapp.com/api',
+    messageAPI: 'messages',
+    senderAPI: 'user/me',
+    user: 'user',
+    webSocket: `ws://mighty-cove-31255.herokuapp.com/websockets?${_jsCookieDefault.default.get('approveCode')}`
+};
+async function getAboutMe({ url , senderAPI  }) {
+    try {
+        const response = await fetch(`${url}/${senderAPI}`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${_jsCookieDefault.default.get('approveCode')}`
+            }
+        });
+        if (response.status === 401) {
+            _view.openModal(_view.UI_MODALS.approve);
+            _view.openModal(_view.UI_MODALS.authorization);
+            _view.closeModal(_view.UI_MODALS.dataLoad);
+            throw new Error('Check that approve code was correct');
+        }
+        const { name , email  } = await response.json();
+        console.log(name, email);
+        _main.aboutMe.name = name;
+        _main.aboutMe.email = email;
+    } catch (error) {
+        alert(`Error while Fetch running API: ${senderAPI}\n Check console log for details`, error.stack);
+        console.log(error.stack);
+    }
+}
+async function setSenderName(name, url, user) {
+    const userName = await fetch(`${url}/${user}`, {
+        method: 'PATCH',
+        headers: {
+            Authorization: `Bearer ${_jsCookieDefault.default.get('approveCode')}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(name)
+    });
+}
+
+},{"js-cookie":"c8bBu","./main":"adjPd","./view":"de63B","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"c8bBu":[function(require,module,exports) {
+(function(global, factory) {
+    module.exports = factory();
+})(this, function() {
+    'use strict';
+    /* eslint-disable no-var */ function assign(target) {
+        for(var i = 1; i < arguments.length; i++){
+            var source = arguments[i];
+            for(var key in source)target[key] = source[key];
+        }
+        return target;
+    }
+    /* eslint-enable no-var */ /* eslint-disable no-var */ var defaultConverter = {
+        read: function(value) {
+            if (value[0] === '"') value = value.slice(1, -1);
+            return value.replace(/(%[\dA-F]{2})+/gi, decodeURIComponent);
+        },
+        write: function(value) {
+            return encodeURIComponent(value).replace(/%(2[346BF]|3[AC-F]|40|5[BDE]|60|7[BCD])/g, decodeURIComponent);
+        }
+    };
+    /* eslint-enable no-var */ /* eslint-disable no-var */ function init(converter1, defaultAttributes) {
+        function set(key, value, attributes) {
+            if (typeof document === 'undefined') return;
+            attributes = assign({}, defaultAttributes, attributes);
+            if (typeof attributes.expires === 'number') attributes.expires = new Date(Date.now() + attributes.expires * 864e5);
+            if (attributes.expires) attributes.expires = attributes.expires.toUTCString();
+            key = encodeURIComponent(key).replace(/%(2[346B]|5E|60|7C)/g, decodeURIComponent).replace(/[()]/g, escape);
+            var stringifiedAttributes = '';
+            for(var attributeName in attributes){
+                if (!attributes[attributeName]) continue;
+                stringifiedAttributes += '; ' + attributeName;
+                if (attributes[attributeName] === true) continue;
+                // Considers RFC 6265 section 5.2:
+                // ...
+                // 3.  If the remaining unparsed-attributes contains a %x3B (";")
+                //     character:
+                // Consume the characters of the unparsed-attributes up to,
+                // not including, the first %x3B (";") character.
+                // ...
+                stringifiedAttributes += '=' + attributes[attributeName].split(';')[0];
+            }
+            return document.cookie = key + '=' + converter1.write(value, key) + stringifiedAttributes;
+        }
+        function get(key) {
+            if (typeof document === 'undefined' || arguments.length && !key) return;
+            // To prevent the for loop in the first place assign an empty array
+            // in case there are no cookies at all.
+            var cookies = document.cookie ? document.cookie.split('; ') : [];
+            var jar = {};
+            for(var i = 0; i < cookies.length; i++){
+                var parts = cookies[i].split('=');
+                var value = parts.slice(1).join('=');
+                try {
+                    var foundKey = decodeURIComponent(parts[0]);
+                    jar[foundKey] = converter1.read(value, foundKey);
+                    if (key === foundKey) break;
+                } catch (e) {}
+            }
+            return key ? jar[key] : jar;
+        }
+        return Object.create({
+            set: set,
+            get: get,
+            remove: function(key, attributes) {
+                set(key, '', assign({}, attributes, {
+                    expires: -1
+                }));
+            },
+            withAttributes: function(attributes) {
+                return init(this.converter, assign({}, this.attributes, attributes));
+            },
+            withConverter: function(converter) {
+                return init(assign({}, this.converter, converter), this.attributes);
+            }
+        }, {
+            attributes: {
+                value: Object.freeze(defaultAttributes)
+            },
+            converter: {
+                value: Object.freeze(converter1)
+            }
+        });
+    }
+    var api = init(defaultConverter, {
+        path: '/'
+    });
+    /* eslint-enable no-var */ return api;
+});
+
+},{}],"foTU5":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. You may obtain a copy of the
+License at http://www.apache.org/licenses/LICENSE-2.0
+
+THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+MERCHANTABLITY OR NON-INFRINGEMENT.
+
+See the Apache Version 2.0 License for specific language governing permissions
+and limitations under the License.
+***************************************************************************** */ /* global Reflect, Promise */ var extendStatics = function(d1, b1) {
+    extendStatics = Object.setPrototypeOf || ({
+        __proto__: []
+    }) instanceof Array && function(d, b) {
+        d.__proto__ = b;
+    } || function(d, b) {
+        for(var p in b)if (b.hasOwnProperty(p)) d[p] = b[p];
+    };
+    return extendStatics(d1, b1);
+};
+function __extends(d, b) {
+    extendStatics(d, b);
+    function __() {
+        this.constructor = d;
+    }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+}
+function __values(o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function() {
+            if (o && i >= o.length) o = void 0;
+            return {
+                value: o && o[i++],
+                done: !o
+            };
+        }
+    };
+}
+function __read(o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while((n === void 0 || n-- > 0) && !(r = i.next()).done)ar.push(r.value);
+    } catch (error) {
+        e = {
+            error: error
+        };
+    } finally{
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        } finally{
+            if (e) throw e.error;
+        }
+    }
+    return ar;
+}
+function __spread() {
+    for(var ar = [], i = 0; i < arguments.length; i++)ar = ar.concat(__read(arguments[i]));
+    return ar;
+}
+var Event = /** @class */ function() {
+    function Event1(type, target) {
+        this.target = target;
+        this.type = type;
+    }
+    return Event1;
+}();
+var ErrorEvent = /** @class */ function(_super) {
+    __extends(ErrorEvent1, _super);
+    function ErrorEvent1(error, target) {
+        var _this = _super.call(this, 'error', target) || this;
+        _this.message = error.message;
+        _this.error = error;
+        return _this;
+    }
+    return ErrorEvent1;
+}(Event);
+var CloseEvent = /** @class */ function(_super) {
+    __extends(CloseEvent1, _super);
+    function CloseEvent1(code, reason, target) {
+        if (code === void 0) code = 1000;
+        if (reason === void 0) reason = '';
+        var _this = _super.call(this, 'close', target) || this;
+        _this.wasClean = true;
+        _this.code = code;
+        _this.reason = reason;
+        return _this;
+    }
+    return CloseEvent1;
+}(Event);
+/*!
+ * Reconnecting WebSocket
+ * by Pedro Ladaria <pedro.ladaria@gmail.com>
+ * https://github.com/pladaria/reconnecting-websocket
+ * License MIT
+ */ var getGlobalWebSocket = function() {
+    if (typeof WebSocket !== 'undefined') // @ts-ignore
+    return WebSocket;
+};
+/**
+ * Returns true if given argument looks like a WebSocket class
+ */ var isWebSocket = function(w) {
+    return typeof w !== 'undefined' && !!w && w.CLOSING === 2;
+};
+var DEFAULT = {
+    maxReconnectionDelay: 10000,
+    minReconnectionDelay: 1000 + Math.random() * 4000,
+    minUptime: 5000,
+    reconnectionDelayGrowFactor: 1.3,
+    connectionTimeout: 4000,
+    maxRetries: Infinity,
+    maxEnqueuedMessages: Infinity,
+    startClosed: false,
+    debug: false
+};
+var ReconnectingWebSocket = /** @class */ function() {
+    function ReconnectingWebSocket1(url, protocols, options) {
+        var _this = this;
+        if (options === void 0) options = {};
+        this._listeners = {
+            error: [],
+            message: [],
+            open: [],
+            close: []
+        };
+        this._retryCount = -1;
+        this._shouldReconnect = true;
+        this._connectLock = false;
+        this._binaryType = 'blob';
+        this._closeCalled = false;
+        this._messageQueue = [];
+        /**
+         * An event listener to be called when the WebSocket connection's readyState changes to CLOSED
+         */ this.onclose = null;
+        /**
+         * An event listener to be called when an error occurs
+         */ this.onerror = null;
+        /**
+         * An event listener to be called when a message is received from the server
+         */ this.onmessage = null;
+        /**
+         * An event listener to be called when the WebSocket connection's readyState changes to OPEN;
+         * this indicates that the connection is ready to send and receive data
+         */ this.onopen = null;
+        this._handleOpen = function(event) {
+            _this._debug('open event');
+            var _a = _this._options.minUptime, minUptime = _a === void 0 ? DEFAULT.minUptime : _a;
+            clearTimeout(_this._connectTimeout);
+            _this._uptimeTimeout = setTimeout(function() {
+                return _this._acceptOpen();
+            }, minUptime);
+            _this._ws.binaryType = _this._binaryType;
+            // send enqueued messages (messages sent before websocket open event)
+            _this._messageQueue.forEach(function(message) {
+                return _this._ws.send(message);
+            });
+            _this._messageQueue = [];
+            if (_this.onopen) _this.onopen(event);
+            _this._listeners.open.forEach(function(listener) {
+                return _this._callEventListener(event, listener);
+            });
+        };
+        this._handleMessage = function(event) {
+            _this._debug('message event');
+            if (_this.onmessage) _this.onmessage(event);
+            _this._listeners.message.forEach(function(listener) {
+                return _this._callEventListener(event, listener);
+            });
+        };
+        this._handleError = function(event) {
+            _this._debug('error event', event.message);
+            _this._disconnect(undefined, event.message === 'TIMEOUT' ? 'timeout' : undefined);
+            if (_this.onerror) _this.onerror(event);
+            _this._debug('exec error listeners');
+            _this._listeners.error.forEach(function(listener) {
+                return _this._callEventListener(event, listener);
+            });
+            _this._connect();
+        };
+        this._handleClose = function(event) {
+            _this._debug('close event');
+            _this._clearTimeouts();
+            if (_this._shouldReconnect) _this._connect();
+            if (_this.onclose) _this.onclose(event);
+            _this._listeners.close.forEach(function(listener) {
+                return _this._callEventListener(event, listener);
+            });
+        };
+        this._url = url;
+        this._protocols = protocols;
+        this._options = options;
+        if (this._options.startClosed) this._shouldReconnect = false;
+        this._connect();
+    }
+    Object.defineProperty(ReconnectingWebSocket1, "CONNECTING", {
+        get: function() {
+            return 0;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1, "OPEN", {
+        get: function() {
+            return 1;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1, "CLOSING", {
+        get: function() {
+            return 2;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1, "CLOSED", {
+        get: function() {
+            return 3;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "CONNECTING", {
+        get: function() {
+            return ReconnectingWebSocket1.CONNECTING;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "OPEN", {
+        get: function() {
+            return ReconnectingWebSocket1.OPEN;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "CLOSING", {
+        get: function() {
+            return ReconnectingWebSocket1.CLOSING;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "CLOSED", {
+        get: function() {
+            return ReconnectingWebSocket1.CLOSED;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "binaryType", {
+        get: function() {
+            return this._ws ? this._ws.binaryType : this._binaryType;
+        },
+        set: function(value) {
+            this._binaryType = value;
+            if (this._ws) this._ws.binaryType = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "retryCount", {
+        /**
+         * Returns the number or connection retries
+         */ get: function() {
+            return Math.max(this._retryCount, 0);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "bufferedAmount", {
+        /**
+         * The number of bytes of data that have been queued using calls to send() but not yet
+         * transmitted to the network. This value resets to zero once all queued data has been sent.
+         * This value does not reset to zero when the connection is closed; if you keep calling send(),
+         * this will continue to climb. Read only
+         */ get: function() {
+            var bytes = this._messageQueue.reduce(function(acc, message) {
+                if (typeof message === 'string') acc += message.length; // not byte size
+                else if (message instanceof Blob) acc += message.size;
+                else acc += message.byteLength;
+                return acc;
+            }, 0);
+            return bytes + (this._ws ? this._ws.bufferedAmount : 0);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "extensions", {
+        /**
+         * The extensions selected by the server. This is currently only the empty string or a list of
+         * extensions as negotiated by the connection
+         */ get: function() {
+            return this._ws ? this._ws.extensions : '';
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "protocol", {
+        /**
+         * A string indicating the name of the sub-protocol the server selected;
+         * this will be one of the strings specified in the protocols parameter when creating the
+         * WebSocket object
+         */ get: function() {
+            return this._ws ? this._ws.protocol : '';
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "readyState", {
+        /**
+         * The current state of the connection; this is one of the Ready state constants
+         */ get: function() {
+            if (this._ws) return this._ws.readyState;
+            return this._options.startClosed ? ReconnectingWebSocket1.CLOSED : ReconnectingWebSocket1.CONNECTING;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(ReconnectingWebSocket1.prototype, "url", {
+        /**
+         * The URL as resolved by the constructor
+         */ get: function() {
+            return this._ws ? this._ws.url : '';
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Closes the WebSocket connection or connection attempt, if any. If the connection is already
+     * CLOSED, this method does nothing
+     */ ReconnectingWebSocket1.prototype.close = function(code, reason) {
+        if (code === void 0) code = 1000;
+        this._closeCalled = true;
+        this._shouldReconnect = false;
+        this._clearTimeouts();
+        if (!this._ws) {
+            this._debug('close enqueued: no ws instance');
+            return;
+        }
+        if (this._ws.readyState === this.CLOSED) {
+            this._debug('close: already closed');
+            return;
+        }
+        this._ws.close(code, reason);
+    };
+    /**
+     * Closes the WebSocket connection or connection attempt and connects again.
+     * Resets retry counter;
+     */ ReconnectingWebSocket1.prototype.reconnect = function(code, reason) {
+        this._shouldReconnect = true;
+        this._closeCalled = false;
+        this._retryCount = -1;
+        if (!this._ws || this._ws.readyState === this.CLOSED) this._connect();
+        else {
+            this._disconnect(code, reason);
+            this._connect();
+        }
+    };
+    /**
+     * Enqueue specified data to be transmitted to the server over the WebSocket connection
+     */ ReconnectingWebSocket1.prototype.send = function(data) {
+        if (this._ws && this._ws.readyState === this.OPEN) {
+            this._debug('send', data);
+            this._ws.send(data);
+        } else {
+            var _a = this._options.maxEnqueuedMessages, maxEnqueuedMessages = _a === void 0 ? DEFAULT.maxEnqueuedMessages : _a;
+            if (this._messageQueue.length < maxEnqueuedMessages) {
+                this._debug('enqueue', data);
+                this._messageQueue.push(data);
+            }
+        }
+    };
+    /**
+     * Register an event handler of a specific event type
+     */ ReconnectingWebSocket1.prototype.addEventListener = function(type, listener) {
+        if (this._listeners[type]) // @ts-ignore
+        this._listeners[type].push(listener);
+    };
+    ReconnectingWebSocket1.prototype.dispatchEvent = function(event) {
+        var e_1, _a;
+        var listeners = this._listeners[event.type];
+        if (listeners) try {
+            for(var listeners_1 = __values(listeners), listeners_1_1 = listeners_1.next(); !listeners_1_1.done; listeners_1_1 = listeners_1.next()){
+                var listener = listeners_1_1.value;
+                this._callEventListener(event, listener);
+            }
+        } catch (e_1_1) {
+            e_1 = {
+                error: e_1_1
+            };
+        } finally{
+            try {
+                if (listeners_1_1 && !listeners_1_1.done && (_a = listeners_1.return)) _a.call(listeners_1);
+            } finally{
+                if (e_1) throw e_1.error;
+            }
+        }
+        return true;
+    };
+    /**
+     * Removes an event listener
+     */ ReconnectingWebSocket1.prototype.removeEventListener = function(type, listener) {
+        if (this._listeners[type]) // @ts-ignore
+        this._listeners[type] = this._listeners[type].filter(function(l) {
+            return l !== listener;
+        });
+    };
+    ReconnectingWebSocket1.prototype._debug = function() {
+        var args = [];
+        for(var _i = 0; _i < arguments.length; _i++)args[_i] = arguments[_i];
+        if (this._options.debug) // not using spread because compiled version uses Symbols
+        // tslint:disable-next-line
+        console.log.apply(console, __spread([
+            'RWS>'
+        ], args));
+    };
+    ReconnectingWebSocket1.prototype._getNextDelay = function() {
+        var _a = this._options, _b = _a.reconnectionDelayGrowFactor, reconnectionDelayGrowFactor = _b === void 0 ? DEFAULT.reconnectionDelayGrowFactor : _b, _c = _a.minReconnectionDelay, minReconnectionDelay = _c === void 0 ? DEFAULT.minReconnectionDelay : _c, _d = _a.maxReconnectionDelay, maxReconnectionDelay = _d === void 0 ? DEFAULT.maxReconnectionDelay : _d;
+        var delay = 0;
+        if (this._retryCount > 0) {
+            delay = minReconnectionDelay * Math.pow(reconnectionDelayGrowFactor, this._retryCount - 1);
+            if (delay > maxReconnectionDelay) delay = maxReconnectionDelay;
+        }
+        this._debug('next delay', delay);
+        return delay;
+    };
+    ReconnectingWebSocket1.prototype._wait = function() {
+        var _this = this;
+        return new Promise(function(resolve) {
+            setTimeout(resolve, _this._getNextDelay());
+        });
+    };
+    ReconnectingWebSocket1.prototype._getNextUrl = function(urlProvider) {
+        if (typeof urlProvider === 'string') return Promise.resolve(urlProvider);
+        if (typeof urlProvider === 'function') {
+            var url = urlProvider();
+            if (typeof url === 'string') return Promise.resolve(url);
+            if (!!url.then) return url;
+        }
+        throw Error('Invalid URL');
+    };
+    ReconnectingWebSocket1.prototype._connect = function() {
+        var _this = this;
+        if (this._connectLock || !this._shouldReconnect) return;
+        this._connectLock = true;
+        var _a = this._options, _b = _a.maxRetries, maxRetries = _b === void 0 ? DEFAULT.maxRetries : _b, _c = _a.connectionTimeout, connectionTimeout = _c === void 0 ? DEFAULT.connectionTimeout : _c, _d = _a.WebSocket, WebSocket = _d === void 0 ? getGlobalWebSocket() : _d;
+        if (this._retryCount >= maxRetries) {
+            this._debug('max retries reached', this._retryCount, '>=', maxRetries);
+            return;
+        }
+        this._retryCount++;
+        this._debug('connect', this._retryCount);
+        this._removeListeners();
+        if (!isWebSocket(WebSocket)) throw Error('No valid WebSocket class provided');
+        this._wait().then(function() {
+            return _this._getNextUrl(_this._url);
+        }).then(function(url) {
+            // close could be called before creating the ws
+            if (_this._closeCalled) return;
+            _this._debug('connect', {
+                url: url,
+                protocols: _this._protocols
+            });
+            _this._ws = _this._protocols ? new WebSocket(url, _this._protocols) : new WebSocket(url);
+            _this._ws.binaryType = _this._binaryType;
+            _this._connectLock = false;
+            _this._addListeners();
+            _this._connectTimeout = setTimeout(function() {
+                return _this._handleTimeout();
+            }, connectionTimeout);
+        });
+    };
+    ReconnectingWebSocket1.prototype._handleTimeout = function() {
+        this._debug('timeout event');
+        this._handleError(new ErrorEvent(Error('TIMEOUT'), this));
+    };
+    ReconnectingWebSocket1.prototype._disconnect = function(code, reason) {
+        if (code === void 0) code = 1000;
+        this._clearTimeouts();
+        if (!this._ws) return;
+        this._removeListeners();
+        try {
+            this._ws.close(code, reason);
+            this._handleClose(new CloseEvent(code, reason, this));
+        } catch (error) {
+        // ignore
+        }
+    };
+    ReconnectingWebSocket1.prototype._acceptOpen = function() {
+        this._debug('accept open');
+        this._retryCount = 0;
+    };
+    ReconnectingWebSocket1.prototype._callEventListener = function(event, listener) {
+        if ('handleEvent' in listener) // @ts-ignore
+        listener.handleEvent(event);
+        else // @ts-ignore
+        listener(event);
+    };
+    ReconnectingWebSocket1.prototype._removeListeners = function() {
+        if (!this._ws) return;
+        this._debug('removeListeners');
+        this._ws.removeEventListener('open', this._handleOpen);
+        this._ws.removeEventListener('close', this._handleClose);
+        this._ws.removeEventListener('message', this._handleMessage);
+        // @ts-ignore
+        this._ws.removeEventListener('error', this._handleError);
+    };
+    ReconnectingWebSocket1.prototype._addListeners = function() {
+        if (!this._ws) return;
+        this._debug('addListeners');
+        this._ws.addEventListener('open', this._handleOpen);
+        this._ws.addEventListener('close', this._handleClose);
+        this._ws.addEventListener('message', this._handleMessage);
+        // @ts-ignore
+        this._ws.addEventListener('error', this._handleError);
+    };
+    ReconnectingWebSocket1.prototype._clearTimeouts = function() {
+        clearTimeout(this._connectTimeout);
+        clearTimeout(this._uptimeTimeout);
+    };
+    return ReconnectingWebSocket1;
+}();
+exports.default = ReconnectingWebSocket;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9yHCA":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // This file is generated automatically by `scripts/build/indices.js`. Please, don't change it.
@@ -3874,96 +4559,6 @@ var quartersInYear = 4;
 var secondsInHour = 3600;
 var secondsInMinute = 60;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"c8bBu":[function(require,module,exports) {
-(function(global, factory) {
-    module.exports = factory();
-})(this, function() {
-    'use strict';
-    /* eslint-disable no-var */ function assign(target) {
-        for(var i = 1; i < arguments.length; i++){
-            var source = arguments[i];
-            for(var key in source)target[key] = source[key];
-        }
-        return target;
-    }
-    /* eslint-enable no-var */ /* eslint-disable no-var */ var defaultConverter = {
-        read: function(value) {
-            if (value[0] === '"') value = value.slice(1, -1);
-            return value.replace(/(%[\dA-F]{2})+/gi, decodeURIComponent);
-        },
-        write: function(value) {
-            return encodeURIComponent(value).replace(/%(2[346BF]|3[AC-F]|40|5[BDE]|60|7[BCD])/g, decodeURIComponent);
-        }
-    };
-    /* eslint-enable no-var */ /* eslint-disable no-var */ function init(converter1, defaultAttributes) {
-        function set(key, value, attributes) {
-            if (typeof document === 'undefined') return;
-            attributes = assign({}, defaultAttributes, attributes);
-            if (typeof attributes.expires === 'number') attributes.expires = new Date(Date.now() + attributes.expires * 864e5);
-            if (attributes.expires) attributes.expires = attributes.expires.toUTCString();
-            key = encodeURIComponent(key).replace(/%(2[346B]|5E|60|7C)/g, decodeURIComponent).replace(/[()]/g, escape);
-            var stringifiedAttributes = '';
-            for(var attributeName in attributes){
-                if (!attributes[attributeName]) continue;
-                stringifiedAttributes += '; ' + attributeName;
-                if (attributes[attributeName] === true) continue;
-                // Considers RFC 6265 section 5.2:
-                // ...
-                // 3.  If the remaining unparsed-attributes contains a %x3B (";")
-                //     character:
-                // Consume the characters of the unparsed-attributes up to,
-                // not including, the first %x3B (";") character.
-                // ...
-                stringifiedAttributes += '=' + attributes[attributeName].split(';')[0];
-            }
-            return document.cookie = key + '=' + converter1.write(value, key) + stringifiedAttributes;
-        }
-        function get(key) {
-            if (typeof document === 'undefined' || arguments.length && !key) return;
-            // To prevent the for loop in the first place assign an empty array
-            // in case there are no cookies at all.
-            var cookies = document.cookie ? document.cookie.split('; ') : [];
-            var jar = {};
-            for(var i = 0; i < cookies.length; i++){
-                var parts = cookies[i].split('=');
-                var value = parts.slice(1).join('=');
-                try {
-                    var foundKey = decodeURIComponent(parts[0]);
-                    jar[foundKey] = converter1.read(value, foundKey);
-                    if (key === foundKey) break;
-                } catch (e) {}
-            }
-            return key ? jar[key] : jar;
-        }
-        return Object.create({
-            set: set,
-            get: get,
-            remove: function(key, attributes) {
-                set(key, '', assign({}, attributes, {
-                    expires: -1
-                }));
-            },
-            withAttributes: function(attributes) {
-                return init(this.converter, assign({}, this.attributes, attributes));
-            },
-            withConverter: function(converter) {
-                return init(assign({}, this.converter, converter), this.attributes);
-            }
-        }, {
-            attributes: {
-                value: Object.freeze(defaultAttributes)
-            },
-            converter: {
-                value: Object.freeze(converter1)
-            }
-        });
-    }
-    var api = init(defaultConverter, {
-        path: '/'
-    });
-    /* eslint-enable no-var */ return api;
-});
-
-},{}]},["kse37","adjPd"], "adjPd", "parcelRequire25d8")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["kse37","adjPd"], "adjPd", "parcelRequire25d8")
 
 //# sourceMappingURL=index.63aff760.js.map

@@ -1,4 +1,3 @@
-import { isDate } from "date-fns";
 import { aboutMe } from "./main.js";
 
 export const UI_ELEM = {
@@ -6,6 +5,7 @@ export const UI_ELEM = {
     chatTemplate: document.querySelector('.chat_template'),
     chatBlock: document.querySelector('.chatBlock'),
     preloader: document.querySelector('.preloader'),
+    messageInfo: document.querySelector('.message__info'),
 }
 
 export const UI_INPUTS = {
@@ -37,30 +37,43 @@ export const UI_MODALS = {
 }
 
 
-export function sendNewMessageUI({text, sendTime, sender, email}) {
-
-    UI_ELEM.messageList.append(UI_ELEM.chatTemplate.content.cloneNode(true));
-    const newMessageItem = UI_ELEM.messageList.lastElementChild;
-
+function createMessageUIContent(elem, text, sendTime, sender, email) {
     const NEW_MESSAGE = {
-        text: newMessageItem.querySelector('.template_message__text'),
-        sendTime: newMessageItem.querySelector('.send__time'),
-        sender: newMessageItem.querySelector('.sender'),
+        text: elem.querySelector('.template_message__text'),
+        sendTime: elem.querySelector('.send__time'),
+        sender: elem.querySelector('.sender'),
     }       
 
     const isSenderI = email === aboutMe.email;
 
     if(isSenderI) {
-        newMessageItem.classList.add('my__message');
+        elem.classList.add('my__message');
     }
 
     NEW_MESSAGE.text.innerText = text;
     NEW_MESSAGE.sendTime.innerText = sendTime;
     NEW_MESSAGE.sender.innerText = `${sender}: `;
+}
 
+export function sendNewMessageUI({text, sendTime, sender, email}) {
+    UI_ELEM.messageList.append(UI_ELEM.chatTemplate.content.cloneNode(true));
+    const newMessageItem = UI_ELEM.messageList.lastElementChild;
+
+    createMessageUIContent(newMessageItem, text, sendTime, sender, email);
     // Нужно ли действие ниже выносить в отдельную функцию?
     UI_ELEM.messageList.scrollIntoView({block: "end"});
 } 
+
+export function sendHistoryMessageUI({text, sendTime, sender, email}) {
+    UI_ELEM.messageList.prepend(UI_ELEM.chatTemplate.content.cloneNode(true));
+    const newMessageItem = UI_ELEM.messageList.firstElementChild;
+
+    createMessageUIContent(newMessageItem, text, sendTime, sender, email);
+} 
+
+export function loadedAllMessages(text) {
+    UI_ELEM.messageInfo.innerText = text;
+}
 
 export function openCloseSettings() {
     UI_MODALS.settings.classList.toggle('displayModal');

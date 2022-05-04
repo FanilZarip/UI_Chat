@@ -1,28 +1,40 @@
-import { UI_ELEM, UI_BUTTONS, UI_MODALS, UI_FORMS, UI_INPUTS, sendNewMessageUI, openCloseSettings, closeModal, openModal, showAuthorithationOk, clearInput } from "./view.js";
+import { UI_ELEM, UI_BUTTONS, UI_MODALS, UI_FORMS, UI_INPUTS, loadedAllMessages, sendHistoryMessageUI, openCloseSettings, closeModal, openModal, showAuthorithationOk, clearInput } from "./view.js";
+import { sendMessageWebSocket } from "./socket.js";
+import { Rest_API_Data, getAboutMe, setSenderName } from "./backend.js";
 import { format } from 'date-fns';
 import Cookies from 'js-cookie';
 
-const Rest_API_Data = {
-    email: {
-        email:'fanilfan1994@mail.ru',
-    },
-    url: 'https://mighty-cove-31255.herokuapp.com/api',
-    messageAPI: 'messages',
-    senderAPI: 'user/me',
-    user: 'user',
-}
+
+const messagesShowCount = 20;
+const historyArray = [];
 
 export const aboutMe = {
     name: 'Я',
     email: 'fanilfan@mail.ru',
 }
 
-const messagesShowCount = 2;
+export function collectMessageData(text, sendTime, sender, email) {
+
+    const messageData = {
+        text: text,
+        sendTime: format(new Date(sendTime), 'HH:mm'),
+        sender: sender,
+        email: email,
+    }
+    return messageData;
+}
+
+function getHistoryArray(array) {
+    
+    array.forEach(element => {
+        historyArray.push(element);
+    });
+}
 
 getAboutMe(Rest_API_Data);
 checkCookie();
 
-const chatCodeApprove = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhbmlsZmFuMTk5NEBtYWlsLnJ1IiwiaWF0IjoxNjUxNTA1MDUyLCJleHAiOjE2NTE5NTE0NTJ9.zkWiJFql2pfCa2UTlNYSeVawr8o7C9-fq0vrjIRQUHE';
+const chatCodeApprove = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhbmlsZmFuMTk5NEBtYWlsLnJ1IiwiaWF0IjoxNjUxNjg5NzE3LCJleHAiOjE2NTIxMzYxMTd9.BKRCbU-mMEv5LQ6wfGSgXkMmvLG70E8_qbW8DMbnBrs';
 
 UI_BUTTONS.settings.addEventListener('click', openCloseSettings);
 UI_BUTTONS.settingsClose.addEventListener('click', openCloseSettings);
@@ -34,26 +46,20 @@ UI_FORMS.approve.addEventListener('submit', (event) => {event.preventDefault()})
 UI_FORMS.approve.addEventListener('submit', setApproveCodeCookie);
 
 UI_FORMS.settings.addEventListener('submit', (event) => {event.preventDefault()});
-UI_FORMS.settings.addEventListener('submit', () => {sendUserName(Rest_API_Data)});
+UI_FORMS.settings.addEventListener('submit', () => {changeUserName(Rest_API_Data)});
 
 UI_FORMS.newMessage.addEventListener('submit', (event) => {event.preventDefault()});
 UI_FORMS.newMessage.addEventListener('submit', () => {sendMessageWebSocket()});
 UI_FORMS.newMessage.addEventListener('submit', clearInput);
 
+UI_FORMS.authorization.addEventListener('submit', (event) => {event.preventDefault();});
+UI_FORMS.authorization.addEventListener('submit', () => {sendAuthorizationData(Rest_API_Data)});
+
+UI_ELEM.chatBlock.addEventListener('scroll', () => {addDisplayedMessages(messagesShowCount, historyArray)});
+
 function loadData() {
     getHistory(Rest_API_Data, messagesShowCount);
     getAboutMe(Rest_API_Data);
-}
-
-function collectMessageData(text, sendTime, sender, email) {
-
-    const messageData = {
-        text: text,
-        sendTime: format(new Date(sendTime), 'HH:mm'),
-        sender: sender,
-        email: email,
-    }
-    return messageData;
 }
 
 function setApproveCodeCookie() {
@@ -74,52 +80,15 @@ function checkCookie() {
     }
 }
 
-async function getAboutMe({url, senderAPI}) {
-    try {
-        const response = await fetch(`${url}/${senderAPI}`, {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${Cookies.get('approveCode')}`,
-            },
-        });
-        
-        if (response.status === 401) {
-            openModal(UI_MODALS.approve);
-            openModal(UI_MODALS.authorization);
-            closeModal(UI_MODALS.dataLoad);
-            throw new Error('Check that approve code was correct');
-        }
-
-        const {name, email} = await response.json();
-        
-        console.log(name, email);
-
-        aboutMe.name = name;
-        aboutMe.email = email;
-        
-    } catch (error) {
-        alert(`Error while Fetch running API: ${senderAPI}\n Check console log for details`, error.stack);
-        console.log(error.stack);
-    }    
-}
-
 async function getHistory({url, messageAPI}, count) {
     
     try {
         const response = await fetch(`${url}/${messageAPI}`);
         const result = await response.json();
-        const messages = result.messages;
+        const messageArray = result.messages;
 
-        getMessageByCount(count);
-
-        function getMessageByCount(n) {
-            if (n < 1) {
-                return;
-            }
-            const {text, createdAt, user: {email}} = messages[messages.length - n];
-            sendNewMessageUI(collectMessageData(text, createdAt, aboutMe.name, email));
-            getMessageByCount(n-1);
-        }
+        getHistoryArray(messageArray);
+        getMessageByCount(count, messageArray);
 
         closeModal(UI_MODALS.dataLoad);  
     
@@ -129,20 +98,14 @@ async function getHistory({url, messageAPI}, count) {
     }    
 }
 
-async function sendUserName({url, user}) {
+async function changeUserName({url, user}) {
 
     try {
-
         UI_ELEM.preloader.classList.add('display__preloader');
         const senderName = {name: UI_INPUTS.settings.value};
-        const userName = await fetch(`${url}/${user}`, {
-            method: 'PATCH',
-            headers: {
-                Authorization: `Bearer ${Cookies.get('approveCode')}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(senderName),
-        });
+
+        setSenderName(senderName, url, user);
+
         aboutMe.name = senderName.name;
         getAboutMe(Rest_API_Data);
         UI_ELEM.preloader.classList.remove('display__preloader');
@@ -153,8 +116,7 @@ async function sendUserName({url, user}) {
     }
 }
 
-UI_FORMS.authorization.addEventListener('submit', (event) => {event.preventDefault();});
-UI_FORMS.authorization.addEventListener('submit', () => {sendAuthorizationData(Rest_API_Data)});
+
 
 async function sendAuthorizationData({email, url, user}) {
 
@@ -182,60 +144,31 @@ async function sendAuthorizationData({email, url, user}) {
     }
 }
 
-function socketInit() {
-    const socket = new WebSocket(`ws://mighty-cove-31255.herokuapp.com/websockets?${Cookies.get('approveCode')}`);
-    return socket;
+
+function getMessageByCount(n, messagesJSON) {
+
+    if (n < 1) {
+        return;
+    }
+    getMessageByCount(n-1, messagesJSON);
+
+    const arrayElem = messagesJSON[messagesJSON.length - n];
+
+    const {text, createdAt, user: {email, name}} = arrayElem;
+    sendHistoryMessageUI(collectMessageData(text, createdAt, name, email));
 }
 
-socketInit();
+function addDisplayedMessages(count, array) {
+    const scrollAtTop = UI_ELEM.chatBlock.scrollTop;
 
-const socket = socketInit();
-
-function sendMessageWebSocket() {
-
-    try {
-        const message = UI_INPUTS.message.value;
-        const sessionStatus = socket.readyState;
-        const sessionClosed = {
-            closing: 2,
-            closed: 3,
-        }
-
-        const sessionWasClosed = sessionStatus === sessionClosed.closed || sessionStatus === sessionClosed.closing;
-
-        console.log(socket.readyState);
-        socket.send(JSON.stringify({
-            text: message,
-        }));
-
-        if (sessionWasClosed) {
-            console.log('sessionClosed');
-            socketInit();
-        }
-
-    } catch (error) {
-        console.log(error.stack);
+    if (array.length === 0) {
+        loadedAllMessages('Все сообщения были загружены');
+        return;
     }
 
+    else if (scrollAtTop === 0) {
+        const messageToShow = array.splice(-count, count);
+        
+        setTimeout(getMessageByCount(count, messageToShow), 1000);        
+    }
 }
-
-// socket.addEventListener('open', sendMessageWebSocket);
-
-
-socket.onmessage = function(event) {
-    try {
-        const newSocketMessage = JSON.parse(event.data);
-        const {text, createdAt, user: {email}} = newSocketMessage;
-        const name = aboutMe.name;
-        const brokenJSON = !text || !createdAt || !name || !email;
-
-        if (brokenJSON) {
-            throw new Error('JSON was broken')
-        } else {
-            console.log(collectMessageData(text, createdAt, name, email));
-            sendNewMessageUI(collectMessageData(text, createdAt, name, email));   
-        }
-    } catch (error) {
-        console.log(error.stack)
-    }
-};

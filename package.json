@@ -10,7 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "date-fns": "^2.28.0",
-    "js-cookie": "^3.0.1"
+    "js-cookie": "^3.0.1",
+    "reconnecting-websocket": "^4.4.0"
   },
   "devDependencies": {
     "parcel": "^2.5.0"
