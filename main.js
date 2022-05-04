@@ -90,6 +90,8 @@ async function getHistory({url, messageAPI}, count) {
         getHistoryArray(messageArray);
         getMessageByCount(count, messageArray);
 
+        UI_ELEM.messageList.scrollIntoView({block: "end"});
+        
         closeModal(UI_MODALS.dataLoad);  
     
     } catch (error) {
@@ -160,15 +162,16 @@ function getMessageByCount(n, messagesJSON) {
 
 function addDisplayedMessages(count, array) {
     const scrollAtTop = UI_ELEM.chatBlock.scrollTop;
+    const isScrollAtTop = scrollAtTop === 0;
 
     if (array.length === 0) {
         loadedAllMessages('Все сообщения были загружены');
         return;
     }
 
-    else if (scrollAtTop === 0) {
-        const messageToShow = array.splice(-count, count);
+    else if (isScrollAtTop) {
         
+        const messageToShow = array.splice(-count, count);
         setTimeout(getMessageByCount(count, messageToShow), 1000);        
     }
 }
