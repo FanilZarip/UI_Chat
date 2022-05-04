@@ -884,7 +884,7 @@ const Rest_API_Data = {
     messageAPI: 'messages',
     senderAPI: 'user/me',
     user: 'user',
-    webSocket: `ws://mighty-cove-31255.herokuapp.com/websockets?${_jsCookieDefault.default.get('approveCode')}`
+    webSocket: `wss://mighty-cove-31255.herokuapp.com/websockets?${_jsCookieDefault.default.get('approveCode')}`
 };
 async function getAboutMe({ url , senderAPI  }) {
     try {

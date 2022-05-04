@@ -10,7 +10,7 @@ export const Rest_API_Data = {
     messageAPI: 'messages',
     senderAPI: 'user/me',
     user: 'user',
-    webSocket: `ws://mighty-cove-31255.herokuapp.com/websockets?${Cookies.get('approveCode')}`,
+    webSocket: `wss://mighty-cove-31255.herokuapp.com/websockets?${Cookies.get('approveCode')}`,
 }
 
 export async function getAboutMe({url, senderAPI}) {
