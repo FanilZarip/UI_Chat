@@ -1,6 +1,6 @@
-import { UI_ELEM, UI_BUTTONS, UI_MODALS, UI_FORMS, UI_INPUTS, loadedAllMessages, sendHistoryMessageUI, openCloseSettings, closeModal, openModal, showAuthorithationOk, clearInput } from "./view.js";
-import { sendMessageWebSocket } from "./socket.js";
-import { Rest_API_Data, getAboutMe, setSenderName } from "./backend.js";
+import { UI_ELEM, UI_BUTTONS, UI_MODALS, UI_FORMS, UI_INPUTS, loadedAllMessages, authorizationEmail, sendHistoryMessageUI, openCloseSettings, closeModal, showAuthorithationOk, clearInput } from "./view.js";
+import { sendMessageWebSocket } from "./socket";
+import { Rest_API_Data, getAboutMe, setSenderName, checkAuthorization, updateAboutMe } from "./service";
 import { format } from 'date-fns';
 import Cookies from 'js-cookie';
 
@@ -10,8 +10,13 @@ const historyArray = [];
 
 export const aboutMe = {
     name: 'Я',
-    email: 'fanilfan@mail.ru',
+    email: 'email',
 }
+
+console.log(aboutMe);
+
+updateAboutMe();
+checkAuthorization();
 
 export function collectMessageData(text, sendTime, sender, email) {
 
@@ -53,7 +58,7 @@ UI_FORMS.newMessage.addEventListener('submit', () => {sendMessageWebSocket()});
 UI_FORMS.newMessage.addEventListener('submit', clearInput);
 
 UI_FORMS.authorization.addEventListener('submit', (event) => {event.preventDefault();});
-UI_FORMS.authorization.addEventListener('submit', () => {sendAuthorizationData(Rest_API_Data)});
+UI_FORMS.authorization.addEventListener('submit', () => {sendAuthorizationData(Rest_API_Data, authorizationEmail())});
 
 UI_ELEM.chatBlock.addEventListener('scroll', () => {addDisplayedMessages(messagesShowCount, historyArray)});
 
@@ -120,9 +125,10 @@ async function changeUserName({url, user}) {
 
 
 
-async function sendAuthorizationData({email, url, user}) {
+async function sendAuthorizationData({url, user}, email) {
 
     try {
+
         const response = await fetch(`${url}/${user}`, {
             method: 'POST',
             headers: {
@@ -141,8 +147,8 @@ async function sendAuthorizationData({email, url, user}) {
         } else {
             throw new Error();
         }
-    } catch (Error) {
-        console.log(`Fetch ${user}}`, Error.stack);
+    } catch (error) {
+        console.log(`Fetch ${user}`, error.stack);
     }
 }
 
@@ -154,9 +160,9 @@ function getMessageByCount(n, messagesJSON) {
     }
     getMessageByCount(n-1, messagesJSON);
 
-    const arrayElem = messagesJSON[messagesJSON.length - n];
+    const messageElem = messagesJSON[messagesJSON.length - n];
 
-    const {text, createdAt, user: {email, name}} = arrayElem;
+    const {text, createdAt, user: {email, name}} = messageElem;
     sendHistoryMessageUI(collectMessageData(text, createdAt, name, email));
 }
 
@@ -170,7 +176,7 @@ function addDisplayedMessages(count, array) {
     }
 
     else if (isScrollAtTop) {
-        
+
         const messageToShow = array.splice(-count, count);
         setTimeout(getMessageByCount(count, messageToShow), 1000);        
     }

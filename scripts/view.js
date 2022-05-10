@@ -12,6 +12,7 @@ export const UI_INPUTS = {
     message: document.querySelector('.message__input'),
     approveCode: document.querySelector('.approve__input'),
     settings: document.querySelector('.settings__input'),
+    authorization: document.querySelector('.authorization__input'),
 }
 
 export const UI_FORMS = {
@@ -93,4 +94,12 @@ export function showAuthorithationOk() {
 
 export function clearInput() {
     UI_INPUTS.message.value = '';
+}
+
+        
+export const authorizationEmail = function getAuthorizationEmail() {
+    const authorizationEmail = {
+        email: UI_INPUTS.authorization.value
+    };
+    return authorizationEmail;
 }

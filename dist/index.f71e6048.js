@@ -142,13 +142,13 @@
       this[globalName] = mainExports;
     }
   }
-})({"kse37":[function(require,module,exports) {
+})({"3FwqD":[function(require,module,exports) {
 "use strict";
 var HMR_HOST = null;
 var HMR_PORT = null;
 var HMR_SECURE = false;
 var HMR_ENV_HASH = "d6ea1d42532a7575";
-module.bundle.HMR_BUNDLE_ID = "26170a8763aff760";
+module.bundle.HMR_BUNDLE_ID = "c26ef22bf71e6048";
 function _toConsumableArray(arr) {
     return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread();
 }
@@ -525,7 +525,7 @@ function hmrAcceptRun(bundle, id) {
     acceptedAssets[id] = true;
 }
 
-},{}],"adjPd":[function(require,module,exports) {
+},{}],"8VGZO":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "aboutMe", ()=>aboutMe
@@ -533,8 +533,8 @@ parcelHelpers.export(exports, "aboutMe", ()=>aboutMe
 parcelHelpers.export(exports, "collectMessageData", ()=>collectMessageData
 );
 var _viewJs = require("./view.js");
-var _socketJs = require("./socket.js");
-var _serviceJs = require("./service.js");
+var _socket = require("./socket");
+var _service = require("./service");
 var _dateFns = require("date-fns");
 var _jsCookie = require("js-cookie");
 var _jsCookieDefault = parcelHelpers.interopDefault(_jsCookie);
@@ -545,8 +545,8 @@ const aboutMe = {
     email: 'email'
 };
 console.log(aboutMe);
-_serviceJs.updateAboutMe();
-_serviceJs.checkAuthorization();
+_service.updateAboutMe();
+_service.checkAuthorization();
 function collectMessageData(text, sendTime, sender, email) {
     const messageData = {
         text: text,
@@ -561,7 +561,7 @@ function getHistoryArray(array) {
         historyArray.push(element);
     });
 }
-_serviceJs.getAboutMe(_serviceJs.Rest_API_Data);
+_service.getAboutMe(_service.Rest_API_Data);
 checkCookie();
 const chatCodeApprove = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImZhbmlsZmFuMTk5NEBtYWlsLnJ1IiwiaWF0IjoxNjUxNjg5NzE3LCJleHAiOjE2NTIxMzYxMTd9.BKRCbU-mMEv5LQ6wfGSgXkMmvLG70E8_qbW8DMbnBrs';
 _viewJs.UI_BUTTONS.settings.addEventListener('click', _viewJs.openCloseSettings);
@@ -580,27 +580,27 @@ _viewJs.UI_FORMS.settings.addEventListener('submit', (event)=>{
     event.preventDefault();
 });
 _viewJs.UI_FORMS.settings.addEventListener('submit', ()=>{
-    changeUserName(_serviceJs.Rest_API_Data);
+    changeUserName(_service.Rest_API_Data);
 });
 _viewJs.UI_FORMS.newMessage.addEventListener('submit', (event)=>{
     event.preventDefault();
 });
 _viewJs.UI_FORMS.newMessage.addEventListener('submit', ()=>{
-    _socketJs.sendMessageWebSocket();
+    _socket.sendMessageWebSocket();
 });
 _viewJs.UI_FORMS.newMessage.addEventListener('submit', _viewJs.clearInput);
 _viewJs.UI_FORMS.authorization.addEventListener('submit', (event)=>{
     event.preventDefault();
 });
 _viewJs.UI_FORMS.authorization.addEventListener('submit', ()=>{
-    sendAuthorizationData(_serviceJs.Rest_API_Data, _viewJs.authorizationEmail());
+    sendAuthorizationData(_service.Rest_API_Data, _viewJs.authorizationEmail());
 });
 _viewJs.UI_ELEM.chatBlock.addEventListener('scroll', ()=>{
     addDisplayedMessages(messagesShowCount, historyArray);
 });
 function loadData() {
-    getHistory(_serviceJs.Rest_API_Data, messagesShowCount);
-    _serviceJs.getAboutMe(_serviceJs.Rest_API_Data);
+    getHistory(_service.Rest_API_Data, messagesShowCount);
+    _service.getAboutMe(_service.Rest_API_Data);
 }
 function setApproveCodeCookie() {
     const approveCode = _viewJs.UI_INPUTS.approveCode.value;
@@ -640,9 +640,9 @@ async function changeUserName({ url , user  }) {
         const senderName = {
             name: _viewJs.UI_INPUTS.settings.value
         };
-        _serviceJs.setSenderName(senderName, url, user);
+        _service.setSenderName(senderName, url, user);
         aboutMe.name = senderName.name;
-        _serviceJs.getAboutMe(_serviceJs.Rest_API_Data);
+        _service.getAboutMe(_service.Rest_API_Data);
         _viewJs.UI_ELEM.preloader.classList.remove('display__preloader');
         _viewJs.closeModal(_viewJs.UI_MODALS.settings);
     } catch (error) {
@@ -688,7 +688,7 @@ function addDisplayedMessages(count, array) {
     }
 }
 
-},{"./view.js":"de63B","./socket.js":"duoz3","date-fns":"9yHCA","js-cookie":"c8bBu","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./service.js":"1AaKt"}],"de63B":[function(require,module,exports) {
+},{"./view.js":"3BdZo","./socket":"lbMaH","./service":"7VBkh","date-fns":"9yHCA","js-cookie":"c8bBu","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"3BdZo":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "UI_ELEM", ()=>UI_ELEM
@@ -803,7 +803,7 @@ const authorizationEmail = function getAuthorizationEmail() {
     return authorizationEmail1;
 };
 
-},{"./main.js":"adjPd","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
+},{"./main.js":"8VGZO","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"gkKU3":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -833,7 +833,7 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}],"duoz3":[function(require,module,exports) {
+},{}],"lbMaH":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "socket", ()=>socket
@@ -879,7 +879,195 @@ socket.onmessage = function(event) {
     }
 };
 
-},{"./view.js":"de63B","./main.js":"adjPd","reconnecting-websocket":"foTU5","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./service.js":"1AaKt"}],"foTU5":[function(require,module,exports) {
+},{"./view.js":"3BdZo","./main.js":"8VGZO","./service.js":"7VBkh","reconnecting-websocket":"foTU5","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"7VBkh":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Rest_API_Data", ()=>Rest_API_Data
+);
+parcelHelpers.export(exports, "getAboutMe", ()=>getAboutMe
+);
+parcelHelpers.export(exports, "checkAuthorization", ()=>checkAuthorization
+);
+parcelHelpers.export(exports, "updateAboutMe", ()=>updateAboutMe
+);
+parcelHelpers.export(exports, "setSenderName", ()=>setSenderName
+);
+var _jsCookie = require("js-cookie");
+var _jsCookieDefault = parcelHelpers.interopDefault(_jsCookie);
+var _main = require("./main");
+var _view = require("./view");
+var _errorsJs = require("./errors.js");
+const ERROR_MESSAGES = {
+    setUserName: 'Error while seting userData\n',
+    checkToken: 'Check your token'
+};
+const Rest_API_Data = {
+    url: 'https://mighty-cove-31255.herokuapp.com/api',
+    messageAPI: 'messages',
+    senderAPI: 'user/me',
+    user: 'user',
+    webSocket: `wss://mighty-cove-31255.herokuapp.com/websockets?${_jsCookieDefault.default.get('approveCode')}`,
+    bearer: `Bearer ${_jsCookieDefault.default.get('approveCode')}`
+};
+async function getAboutMe({ url , senderAPI , bearer  }) {
+    try {
+        const response = await fetch(`${url}/${senderAPI}`, {
+            method: 'GET',
+            headers: {
+                Authorization: bearer
+            }
+        });
+        return response;
+    } catch (error) {
+        alert(`Error while Fetch running API: ${senderAPI}\n Check console log for details`, error.stack);
+        console.log(error.stack);
+    }
+}
+async function checkAuthorization() {
+    try {
+        const response = await getAboutMe(Rest_API_Data);
+        const authorizationError = response.status === 401;
+        if (authorizationError) {
+            _view.openModal(_view.UI_MODALS.approve);
+            _view.openModal(_view.UI_MODALS.authorization);
+            _view.closeModal(_view.UI_MODALS.dataLoad);
+            throw new _errorsJs.AuthorizationError('Ошибка авторизации');
+        }
+    } catch (err) {
+        if (err instanceof _errorsJs.AuthorizationError) alert("Проверьте токен: " + err.message);
+        else console.log(err);
+    }
+}
+async function updateAboutMe() {
+    try {
+        const response = await getAboutMe(Rest_API_Data);
+        const aboutMeJSON = await response.json();
+        const { name , email  } = aboutMeJSON;
+        _main.aboutMe.name = name;
+        _main.aboutMe.email = email;
+    } catch (error) {
+        console.log(error);
+        console.log('error while updating data');
+    }
+}
+async function setSenderName(name, url, user) {
+    try {
+        const userName = await fetch(`${url}/${user}`, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${_jsCookieDefault.default.get('approveCode')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(name)
+        });
+    } catch (error) {
+        console.log(ERROR_MESSAGES.setUserName, error.stack);
+    }
+}
+
+},{"js-cookie":"c8bBu","./main":"8VGZO","./view":"3BdZo","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./errors.js":"4JFAL"}],"c8bBu":[function(require,module,exports) {
+(function(global, factory) {
+    module.exports = factory();
+})(this, function() {
+    'use strict';
+    /* eslint-disable no-var */ function assign(target) {
+        for(var i = 1; i < arguments.length; i++){
+            var source = arguments[i];
+            for(var key in source)target[key] = source[key];
+        }
+        return target;
+    }
+    /* eslint-enable no-var */ /* eslint-disable no-var */ var defaultConverter = {
+        read: function(value) {
+            if (value[0] === '"') value = value.slice(1, -1);
+            return value.replace(/(%[\dA-F]{2})+/gi, decodeURIComponent);
+        },
+        write: function(value) {
+            return encodeURIComponent(value).replace(/%(2[346BF]|3[AC-F]|40|5[BDE]|60|7[BCD])/g, decodeURIComponent);
+        }
+    };
+    /* eslint-enable no-var */ /* eslint-disable no-var */ function init(converter1, defaultAttributes) {
+        function set(key, value, attributes) {
+            if (typeof document === 'undefined') return;
+            attributes = assign({}, defaultAttributes, attributes);
+            if (typeof attributes.expires === 'number') attributes.expires = new Date(Date.now() + attributes.expires * 864e5);
+            if (attributes.expires) attributes.expires = attributes.expires.toUTCString();
+            key = encodeURIComponent(key).replace(/%(2[346B]|5E|60|7C)/g, decodeURIComponent).replace(/[()]/g, escape);
+            var stringifiedAttributes = '';
+            for(var attributeName in attributes){
+                if (!attributes[attributeName]) continue;
+                stringifiedAttributes += '; ' + attributeName;
+                if (attributes[attributeName] === true) continue;
+                // Considers RFC 6265 section 5.2:
+                // ...
+                // 3.  If the remaining unparsed-attributes contains a %x3B (";")
+                //     character:
+                // Consume the characters of the unparsed-attributes up to,
+                // not including, the first %x3B (";") character.
+                // ...
+                stringifiedAttributes += '=' + attributes[attributeName].split(';')[0];
+            }
+            return document.cookie = key + '=' + converter1.write(value, key) + stringifiedAttributes;
+        }
+        function get(key) {
+            if (typeof document === 'undefined' || arguments.length && !key) return;
+            // To prevent the for loop in the first place assign an empty array
+            // in case there are no cookies at all.
+            var cookies = document.cookie ? document.cookie.split('; ') : [];
+            var jar = {};
+            for(var i = 0; i < cookies.length; i++){
+                var parts = cookies[i].split('=');
+                var value = parts.slice(1).join('=');
+                try {
+                    var foundKey = decodeURIComponent(parts[0]);
+                    jar[foundKey] = converter1.read(value, foundKey);
+                    if (key === foundKey) break;
+                } catch (e) {}
+            }
+            return key ? jar[key] : jar;
+        }
+        return Object.create({
+            set: set,
+            get: get,
+            remove: function(key, attributes) {
+                set(key, '', assign({}, attributes, {
+                    expires: -1
+                }));
+            },
+            withAttributes: function(attributes) {
+                return init(this.converter, assign({}, this.attributes, attributes));
+            },
+            withConverter: function(converter) {
+                return init(assign({}, this.converter, converter), this.attributes);
+            }
+        }, {
+            attributes: {
+                value: Object.freeze(defaultAttributes)
+            },
+            converter: {
+                value: Object.freeze(converter1)
+            }
+        });
+    }
+    var api = init(defaultConverter, {
+        path: '/'
+    });
+    /* eslint-enable no-var */ return api;
+});
+
+},{}],"4JFAL":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "AuthorizationError", ()=>AuthorizationError
+);
+class AuthorizationError extends Error {
+    constructor(message){
+        super(message);
+        this.name = "AuthorizationError";
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"foTU5":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /*! *****************************************************************************
@@ -1413,181 +1601,7 @@ var ReconnectingWebSocket = /** @class */ function() {
 }();
 exports.default = ReconnectingWebSocket;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"1AaKt":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Rest_API_Data", ()=>Rest_API_Data
-);
-parcelHelpers.export(exports, "getAboutMe", ()=>getAboutMe
-);
-parcelHelpers.export(exports, "checkAuthorization", ()=>checkAuthorization
-);
-parcelHelpers.export(exports, "updateAboutMe", ()=>updateAboutMe
-);
-parcelHelpers.export(exports, "setSenderName", ()=>setSenderName
-);
-var _jsCookie = require("js-cookie");
-var _jsCookieDefault = parcelHelpers.interopDefault(_jsCookie);
-var _main = require("./main");
-var _view = require("./view");
-const ERROR_MESSAGES = {
-    setUserName: 'Error while seting userData\n',
-    checkToken: 'Check your token'
-};
-const Rest_API_Data = {
-    url: 'https://mighty-cove-31255.herokuapp.com/api',
-    messageAPI: 'messages',
-    senderAPI: 'user/me',
-    user: 'user',
-    webSocket: `wss://mighty-cove-31255.herokuapp.com/websockets?${_jsCookieDefault.default.get('approveCode')}`,
-    bearer: `Bearer ${_jsCookieDefault.default.get('approveCode')}`
-};
-async function getAboutMe({ url , senderAPI , bearer  }) {
-    try {
-        const response = await fetch(`${url}/${senderAPI}`, {
-            method: 'GET',
-            headers: {
-                Authorization: bearer
-            }
-        });
-        return response;
-    } catch (error) {
-        alert(`Error while Fetch running API: ${senderAPI}\n Check console log for details`, error.stack);
-        console.log(error.stack);
-    }
-}
-async function checkAuthorization() {
-    try {
-        const response = await getAboutMe(Rest_API_Data);
-        const authorizationError = response.status === 401;
-        if (authorizationError) {
-            _view.openModal(_view.UI_MODALS.approve);
-            _view.openModal(_view.UI_MODALS.authorization);
-            _view.closeModal(_view.UI_MODALS.dataLoad);
-            throw new Error('Check that approve code was correct');
-        }
-    } catch (error) {
-        console.log(ERROR_MESSAGES.checkToken, error);
-    }
-}
-async function updateAboutMe() {
-    try {
-        const response = await getAboutMe(Rest_API_Data);
-        const aboutMeJSON = await response.json();
-        const { name , email  } = aboutMeJSON;
-        _main.aboutMe.name = name;
-        _main.aboutMe.email = email;
-    } catch (error) {
-        console.log(error);
-        console.log('error while updating data');
-    }
-}
-async function setSenderName(name, url, user) {
-    try {
-        const userName = await fetch(`${url}/${user}`, {
-            method: 'PATCH',
-            headers: {
-                Authorization: `Bearer ${_jsCookieDefault.default.get('approveCode')}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(name)
-        });
-    } catch (error) {
-        console.log(ERROR_MESSAGES.setUserName, error.stack);
-    }
-}
-
-},{"js-cookie":"c8bBu","./main":"adjPd","./view":"de63B","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"c8bBu":[function(require,module,exports) {
-(function(global, factory) {
-    module.exports = factory();
-})(this, function() {
-    'use strict';
-    /* eslint-disable no-var */ function assign(target) {
-        for(var i = 1; i < arguments.length; i++){
-            var source = arguments[i];
-            for(var key in source)target[key] = source[key];
-        }
-        return target;
-    }
-    /* eslint-enable no-var */ /* eslint-disable no-var */ var defaultConverter = {
-        read: function(value) {
-            if (value[0] === '"') value = value.slice(1, -1);
-            return value.replace(/(%[\dA-F]{2})+/gi, decodeURIComponent);
-        },
-        write: function(value) {
-            return encodeURIComponent(value).replace(/%(2[346BF]|3[AC-F]|40|5[BDE]|60|7[BCD])/g, decodeURIComponent);
-        }
-    };
-    /* eslint-enable no-var */ /* eslint-disable no-var */ function init(converter1, defaultAttributes) {
-        function set(key, value, attributes) {
-            if (typeof document === 'undefined') return;
-            attributes = assign({}, defaultAttributes, attributes);
-            if (typeof attributes.expires === 'number') attributes.expires = new Date(Date.now() + attributes.expires * 864e5);
-            if (attributes.expires) attributes.expires = attributes.expires.toUTCString();
-            key = encodeURIComponent(key).replace(/%(2[346B]|5E|60|7C)/g, decodeURIComponent).replace(/[()]/g, escape);
-            var stringifiedAttributes = '';
-            for(var attributeName in attributes){
-                if (!attributes[attributeName]) continue;
-                stringifiedAttributes += '; ' + attributeName;
-                if (attributes[attributeName] === true) continue;
-                // Considers RFC 6265 section 5.2:
-                // ...
-                // 3.  If the remaining unparsed-attributes contains a %x3B (";")
-                //     character:
-                // Consume the characters of the unparsed-attributes up to,
-                // not including, the first %x3B (";") character.
-                // ...
-                stringifiedAttributes += '=' + attributes[attributeName].split(';')[0];
-            }
-            return document.cookie = key + '=' + converter1.write(value, key) + stringifiedAttributes;
-        }
-        function get(key) {
-            if (typeof document === 'undefined' || arguments.length && !key) return;
-            // To prevent the for loop in the first place assign an empty array
-            // in case there are no cookies at all.
-            var cookies = document.cookie ? document.cookie.split('; ') : [];
-            var jar = {};
-            for(var i = 0; i < cookies.length; i++){
-                var parts = cookies[i].split('=');
-                var value = parts.slice(1).join('=');
-                try {
-                    var foundKey = decodeURIComponent(parts[0]);
-                    jar[foundKey] = converter1.read(value, foundKey);
-                    if (key === foundKey) break;
-                } catch (e) {}
-            }
-            return key ? jar[key] : jar;
-        }
-        return Object.create({
-            set: set,
-            get: get,
-            remove: function(key, attributes) {
-                set(key, '', assign({}, attributes, {
-                    expires: -1
-                }));
-            },
-            withAttributes: function(attributes) {
-                return init(this.converter, assign({}, this.attributes, attributes));
-            },
-            withConverter: function(converter) {
-                return init(assign({}, this.converter, converter), this.attributes);
-            }
-        }, {
-            attributes: {
-                value: Object.freeze(defaultAttributes)
-            },
-            converter: {
-                value: Object.freeze(converter1)
-            }
-        });
-    }
-    var api = init(defaultConverter, {
-        path: '/'
-    });
-    /* eslint-enable no-var */ return api;
-});
-
-},{}],"9yHCA":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9yHCA":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // This file is generated automatically by `scripts/build/indices.js`. Please, don't change it.
@@ -4602,6 +4616,6 @@ var quartersInYear = 4;
 var secondsInHour = 3600;
 var secondsInMinute = 60;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["kse37","adjPd"], "adjPd", "parcelRequire25d8")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}]},["3FwqD","8VGZO"], "8VGZO", "parcelRequire25d8")
 
-//# sourceMappingURL=index.63aff760.js.map
+//# sourceMappingURL=index.f71e6048.js.map

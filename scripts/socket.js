@@ -1,6 +1,6 @@
 import {UI_INPUTS, sendNewMessageUI} from './view.js';
 import {collectMessageData, Rest_API_Data} from './main.js';
-import { Rest_API_Data } from "./backend.js";
+import { Rest_API_Data } from "./service.js";
 import ReconnectingWebSocket from 'reconnecting-websocket';
 
 
